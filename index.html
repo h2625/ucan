@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+
+  <!--
+    This meta tag makes the page look correct on phones.
+    Without it, mobile browsers zoom out and show a tiny page.
+  -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>ProcGuard</title>
+
+  <!--
+    ============================================================
+    STYLES (CSS)
+    This section controls how everything looks.
+    CSS custom properties (variables) start with --
+    They let us define colors once and reuse them everywhere.
+    ============================================================
+  -->
+  <style>
+
+    /* ── Reset ─────────────────────────────────────────────
+       Browsers add default spacing to elements. We remove it
+       so we have full control over the layout.
+    ───────────────────────────────────────────────────────── */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* ── Color tokens ───────────────────────────────────────
+       Define every color here as a variable.
+       Components below just reference these names.
+       This makes it easy to retheme the whole app by
+       changing values in one place.
+    ───────────────────────────────────────────────────────── */
+    :root {
+      --bg-primary:       #ffffff;
+      --bg-secondary:     #f5f4f0;
+      --bg-tertiary:      #eeedea;
+
+      --text-primary:     #1a1a18;
+      --text-secondary:   #6b6a65;
+      --text-tertiary:    #9e9d98;
+
+      --border-subtle:    rgba(0, 0, 0, 0.12);
+      --border-medium:    rgba(0, 0, 0, 0.22);
+
+      /* Green — calm/success actions */
+      --calm-bg:          #e1f5ee;
+      --calm-border:      #5dcaa5;
+      --calm-text:        #0f6e56;
+
+      /* Amber — warning/urge actions */
+      --warn-bg:          #faeeda;
+      --warn-border:      #ef9f27;
+      --warn-text:        #854f0b;
+
+      /* Red — danger/brake actions */
+      --danger-bg:        #fcebeb;
+      --danger-border:    #f09595;
+      --danger-text:      #a32d2d;
+
+      /* Blue — info/breathing */
+      --info-bg:          #e6f1fb;
+      --info-border:      #85b7eb;
+      --info-text:        #185fa5;
+
+      --radius-md:        8px;
+      --radius-lg:        12px;
+
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    /* Dark mode — same variable names, different values.
+       The browser switches automatically based on the user's system setting. */
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-primary:     #1c1c1a;
+        --bg-secondary:   #242422;
+        --bg-tertiary:    #2c2c2a;
+
+        --text-primary:   #f0efe9;
+        --text-secondary: #a0a09a;
+        --text-tertiary:  #6e6e68;
+
+        --border-subtle:  rgba(255, 255, 255, 0.10);
+        --border-medium:  rgba(255, 255, 255, 0.20);
+
+        --calm-bg:        #0a2e20;
+        --calm-border:    #1d9e75;
+        --calm-text:      #5dcaa5;
+
+        --warn-bg:        #2e1f06;
+        --warn-border:    #ba7517;
+        --warn-text:      #ef9f27;
+
+        --danger-bg:      #2e0f0f;
+        --danger-border:  #a32d2d;
+        --danger-text:    #f09595;
+
+        --info-bg:        #0c2540;
+        --info-border:    #185fa5;
+        --info-text:      #85b7eb;
+      }
+    }
+
+    /* ── Page base ──────────────────────────────────────────
+       Sets the default font, background, and text color
+       for the entire page.
+    ───────────────────────────────────────────────────────── */
+    body {
+      font-family: var(--font);
+      background-color: var(--bg-tertiary);
+      color: var(--text-primary);
+      min-height: 100vh;
+    }
+
+    /* ── App wrapper ────────────────────────────────────────
+       Centers the content and limits max width to 420px.
+       This makes it look like a phone app on wide screens.
+    ───────────────────────────────────────────────────────── */
+    .app {
+      max-width: 420px;
+      margin: 0 auto;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+
+    /* ── Screens ────────────────────────────────────────────
+       Each "page" of the app is a screen div.
+       By default all screens are hidden (display: none).
+       JavaScript adds the .active class to show one at a time.
+    ───────────────────────────────────────────────────────── */
+    .screen {
+      display: none;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+
+    .screen.active {
+      display: flex;
+    }
+
+    /* ── Card ───────────────────────────────────────────────
+       The main container block used throughout the app.
+    ───────────────────────────────────────────────────────── */
+    .card {
+      background: var(--bg-primary);
+      border: 0.5px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 1rem 1.25rem;
+    }
+
+    /* A softer card with no border — used for quotes/anchors */
+    .card-muted {
+      background: var(--bg-secondary);
+      border-radius: var(--radius-lg);
+      padding: 1rem 1.25rem;
+    }
+
+    /* Semantic card variants */
+    .card-calm   { background: var(--calm-bg);   border: 0.5px solid var(--calm-border);   border-radius: var(--radius-lg); padding: 1rem 1.25rem; }
+    .card-warn   { background: var(--warn-bg);   border: 0.5px solid var(--warn-border);   border-radius: var(--radius-lg); padding: 1rem 1.25rem; }
+    .card-danger { background: var(--danger-bg); border: 0.5px solid var(--danger-border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; }
+
+    /* ── Typography helpers ─────────────────────────────────*/
+    .label {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 5px;
+    }
+
+    .title {
+      font-size: 20px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-top: 3px;
+      line-height: 1.5;
+    }
+
+    .heading {
+      font-size: 17px;
+      font-weight: 500;
+      color: var(--text-primary);
+      line-height: 1.4;
+    }
+
+    .body-text {
+      font-size: 14px;
+      color: var(--text-primary);
+      line-height: 1.6;
+    }
+
+    .secondary-text {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .helper-text {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin-bottom: 8px;
+    }
+
+    .anchor-text {
+      font-size: 15px;
+      color: var(--text-primary);
+      font-style: italic;
+      line-height: 1.6;
+    }
+
+    /* ── Phase tag ──────────────────────────────────────────
+       The small "Layer X" pill badge at the top of screens.
+    ───────────────────────────────────────────────────────── */
+    .phase-tag {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      margin-bottom: 6px;
+    }
+
+    .phase-warn   { background: var(--warn-bg);   color: var(--warn-text);   }
+    .phase-danger { background: var(--danger-bg); color: var(--danger-text); }
+    .phase-calm   { background: var(--calm-bg);   color: var(--calm-text);   }
+
+    /* ── Nav bar ────────────────────────────────────────────
+       Two-tab navigation row at the top of each screen.
+    ───────────────────────────────────────────────────────── */
+    .nav {
+      display: flex;
+      gap: 8px;
+    }
+
+    .nav-btn {
+      flex: 1;
+      padding: 9px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 0.5px solid var(--border-subtle);
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
+      transition: background 0.15s;
+    }
+
+    .nav-btn.active {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      border-color: var(--border-medium);
+    }
+
+    /* ── Buttons ────────────────────────────────────────────
+       All buttons share a base style, then each variant
+       adds its own color on top.
+    ───────────────────────────────────────────────────────── */
+    .btn {
+      width: 100%;
+      padding: 13px 16px;
+      border-radius: var(--radius-lg);
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 0.5px solid var(--border-medium);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      transition: opacity 0.15s, transform 0.1s;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+      opacity: 0.85;
+    }
+
+    /* Semantic button variants */
+    .btn-calm   { background: var(--calm-bg);   color: var(--calm-text);   border-color: var(--calm-border);   }
+    .btn-warn   { background: var(--warn-bg);   color: var(--warn-text);   border-color: var(--warn-border);   }
+    .btn-danger { background: var(--danger-bg); color: var(--danger-text); border-color: var(--danger-border); }
+    .btn-ghost  { background: transparent;      color: var(--text-secondary); border-color: transparent; }
+
+    /* Small button — used inside step rows */
+    .btn-sm {
+      padding: 8px 14px;
+      font-size: 13px;
+      border-radius: var(--radius-md);
+    }
+
+    /* ── Textarea (for the Setup screen) ────────────────────*/
+    textarea {
+      width: 100%;
+      min-height: 80px;
+      padding: 10px;
+      font-size: 14px;
+      font-family: var(--font);
+      border: 0.5px solid var(--border-medium);
+      border-radius: var(--radius-md);
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      resize: none;
+      line-height: 1.6;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: var(--info-border);
+    }
+
+    /* ── Breathing circle ───────────────────────────────────
+       The animated circle in the Urge Interceptor screen.
+       CSS transition handles the smooth size animation.
+    ───────────────────────────────────────────────────────── */
+    .breath-circle {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: var(--info-bg);
+      border: 2px solid var(--info-border);
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      color: var(--info-text);
+      font-weight: 500;
+      /* transition: tells the browser to animate the transform property over 4 seconds */
+      transition: transform 4s ease-in-out;
+    }
+
+    /* JavaScript adds this class during inhale — circle grows */
+    .breath-circle.expand {
+      transform: scale(1.4);
+    }
+
+    /* ── Timer display ──────────────────────────────────────*/
+    .timer-display {
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .timer-number {
+      font-size: 32px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .timer-phase {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-top: 3px;
+    }
+
+    /* ── Progress bar ───────────────────────────────────────*/
+    .progress-track {
+      height: 4px;
+      background: var(--bg-secondary);
+      border-radius: 2px;
+      overflow: hidden;
+      margin: 12px 0;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--calm-border);
+      border-radius: 2px;
+      /* transition: smooth width change over 1 second */
+      transition: width 1s linear;
+    }
+
+    /* ── Step rows (Emergency Brake) ────────────────────────*/
+    .step-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 0.5px solid var(--border-subtle);
+    }
+
+    .step-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .step-num {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--info-bg);
+      color: var(--info-text);
+      font-size: 12px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      /* transition: smooth color change when marked done */
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .step-num.done {
+      background: var(--calm-bg);
+      color: var(--calm-text);
+    }
+
+    .step-content {
+      flex: 1;
+    }
+
+    .step-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-primary);
+      line-height: 1.4;
+    }
+
+    .step-desc {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+      line-height: 1.4;
+    }
+
+    .step-goal-text {
+      font-size: 13px;
+      font-style: italic;
+      color: var(--text-primary);
+      margin-top: 8px;
+      line-height: 1.5;
+    }
+
+    /* ── Completion card ────────────────────────────────────*/
+    .completion-card {
+      display: none;
+      background: var(--calm-bg);
+      border: 0.5px solid var(--calm-border);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      text-align: center;
+    }
+
+    .completion-card.visible {
+      display: block;
+    }
+
+    .completion-title {
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--calm-text);
+    }
+
+    .completion-sub {
+      font-size: 13px;
+      color: var(--calm-text);
+      margin-top: 5px;
+      opacity: 0.8;
+    }
+
+    /* ── Spacing utilities ──────────────────────────────────*/
+    .mt-sm  { margin-top: 8px;  }
+    .mt-md  { margin-top: 12px; }
+    .mt-lg  { margin-top: 16px; }
+    .gap-sm { gap: 8px; }
+
+    /* ── Save confirmation toast ────────────────────────────
+       A small message that briefly appears after saving.
+    ───────────────────────────────────────────────────────── */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(60px);
+      background: var(--text-primary);
+      color: var(--bg-primary);
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 500;
+      opacity: 0;
+      transition: opacity 0.2s, transform 0.2s;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+  </style>
+</head>
+
+<body>
+
+  <!--
+    ============================================================
+    HTML STRUCTURE
+    The app is divided into four "screens".
+    Only one is visible at a time (controlled by JavaScript).
+    ============================================================
+  -->
+
+  <div class="app">
+
+    <!-- ══════════════════════════════════════════════════════
+         SCREEN 1 — HOME
+         The landing screen with two entry points.
+    ══════════════════════════════════════════════════════════ -->
+    <div id="screen-home" class="screen active">
+
+      <div>
+        <p class="title">ProcGuard</p>
+        <p class="subtitle">Your three-layer defense</p>
+      </div>
+
+      <nav class="nav">
+        <button class="nav-btn active" onclick="goTo('home')">Home</button>
+        <button class="nav-btn"        onclick="goTo('setup')">My goals</button>
+      </nav>
+
+      <!-- Urge entry point -->
+      <div class="card-warn">
+        <p class="label">I feel the urge right now</p>
+        <p class="secondary-text" style="margin-bottom: 12px;">
+          Before you open that story app — tap this first.
+        </p>
+        <button class="btn btn-warn" onclick="goTo('urge')">
+          I feel the urge to procrastinate
+        </button>
+      </div>
+
+      <!-- Spiral entry point -->
+      <div class="card-danger">
+        <p class="label">Already in the cycle</p>
+        <p class="secondary-text" style="margin-bottom: 12px;">
+          Been scrolling for a while and can't stop — use the emergency brake.
+        </p>
+        <button class="btn btn-danger" onclick="goTo('brake')">
+          I'm already in a spiral
+        </button>
+      </div>
+
+      <!-- Goal anchor — shows the user's saved goal -->
+      <div class="card-muted">
+        <p class="label">Today's anchor</p>
+        <p class="anchor-text" id="home-goal">
+          "Add your goals in My Goals to see your anchor here."
+        </p>
+      </div>
+
+    </div>
+
+
+    <!-- ══════════════════════════════════════════════════════
+         SCREEN 2 — SETUP (My Goals)
+         Where users write their goal, traps, and next step.
+    ══════════════════════════════════════════════════════════ -->
+    <div id="screen-setup" class="screen">
+
+      <div>
+        <p class="title">My goals</p>
+        <p class="subtitle">Shown back to you when willpower is low</p>
+      </div>
+
+      <nav class="nav">
+        <button class="nav-btn"        onclick="goTo('home')">Home</button>
+        <button class="nav-btn active" onclick="goTo('setup')">My goals</button>
+      </nav>
+
+      <div class="card">
+        <p class="label">What do you really want to achieve?</p>
+        <p class="helper-text">Write it in your own voice. This is what you'll see at your weakest moment.</p>
+        <textarea
+          id="input-goal"
+          placeholder="e.g. I want to finish my project and feel proud, not look back with regret at wasted hours..."
+        ></textarea>
+      </div>
+
+      <div class="card">
+        <p class="label">Your known traps — your "not to do" list</p>
+        <p class="helper-text">Name the specific things that pull you in.</p>
+        <textarea
+          id="input-traps"
+          placeholder="e.g. Reading long stories on my phone, YouTube auto-play, checking Reddit..."
+        ></textarea>
+      </div>
+
+      <div class="card">
+        <p class="label">The next tiny step on your real task</p>
+        <p class="helper-text">Make it absurdly small. You just need an entry point.</p>
+        <textarea
+          id="input-nextstep"
+          placeholder="e.g. Open the document and write just one sentence..."
+        ></textarea>
+      </div>
+
+      <button class="btn btn-calm" onclick="saveGoals()">Save everything</button>
+      <button class="btn btn-ghost" onclick="goTo('home')">Cancel</button>
+
+    </div>
+
+
+    <!-- ══════════════════════════════════════════════════════
+         SCREEN 3 — URGE INTERCEPTOR
+         Layer 1: breathing + goal anchor before the loop starts.
+    ══════════════════════════════════════════════════════════ -->
+    <div id="screen-urge" class="screen">
+
+      <div>
+        <span class="phase-tag phase-warn">Layer 1 — urge interceptor</span>
+        <p class="heading">The urge is real. Don't fight it — ride it out.</p>
+      </div>
+
+      <!-- Breathing exercise -->
+      <div class="card" style="text-align: center;">
+        <p class="label" style="text-align: center;">Breathe for 30 seconds first</p>
+
+        <!-- The circle — JS toggles the .expand class to animate it -->
+        <div style="margin: 16px 0;">
+          <div class="breath-circle" id="breath-circle">Breathe in</div>
+        </div>
+
+        <!-- Countdown -->
+        <div class="timer-display">
+          <div class="timer-number" id="timer-number">0:30</div>
+          <div class="timer-phase"  id="timer-phase">Press start to begin</div>
+        </div>
+
+        <!-- Progress bar — width% is updated by JS every second -->
+        <div class="progress-track">
+          <div class="progress-fill" id="breath-progress" style="width: 100%;"></div>
+        </div>
+
+        <button class="btn" id="breath-btn" onclick="startBreathing()">Start</button>
+      </div>
+
+      <!-- Goal anchor -->
+      <div class="card-muted">
+        <p class="label">Your anchor — you wrote this</p>
+        <p class="anchor-text" id="urge-goal">"..."</p>
+      </div>
+
+      <!-- Known traps -->
+      <div class="card">
+        <p class="label">Known traps — name it to defuse it</p>
+        <p class="secondary-text" id="urge-traps">—</p>
+      </div>
+
+      <!-- Next tiny step -->
+      <div class="card">
+        <p class="label">Your next tiny step</p>
+        <p class="body-text" style="font-weight: 500;" id="urge-nextstep">—</p>
+        <div class="mt-md">
+          <button class="btn btn-calm" onclick="goTo('home')">I'll do that step now</button>
+        </div>
+      </div>
+
+      <button class="btn btn-ghost" onclick="goTo('home')">Back</button>
+
+    </div>
+
+
+    <!-- ══════════════════════════════════════════════════════
+         SCREEN 4 — EMERGENCY BRAKE
+         Layer 3: step-by-step exit protocol for the spiral.
+    ══════════════════════════════════════════════════════════ -->
+    <div id="screen-brake" class="screen">
+
+      <div>
+        <span class="phase-tag phase-danger">Layer 3 — emergency brake</span>
+        <p class="heading">You're in the spiral. Let's slow it down.</p>
+        <p class="subtitle mt-sm">Follow these in order. Each step makes the next easier.</p>
+      </div>
+
+      <!-- Step list -->
+      <div class="card" id="brake-steps">
+
+        <!-- Step 1 -->
+        <div class="step-row">
+          <div class="step-num" id="step-num-1">1</div>
+          <div class="step-content">
+            <p class="step-title">Put the phone face down — right now.</p>
+            <p class="step-desc">Don't close the app. Just flip it. One action.</p>
+            <div class="mt-sm">
+              <button class="btn btn-sm" onclick="completeStep(1)">Done</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="step-row">
+          <div class="step-num" id="step-num-2">2</div>
+          <div class="step-content">
+            <p class="step-title">Stand up and walk to another room.</p>
+            <p class="step-desc">Physical location change breaks the loop signal.</p>
+            <div class="mt-sm">
+              <button class="btn btn-sm" onclick="completeStep(2)">Done</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="step-row">
+          <div class="step-num" id="step-num-3">3</div>
+          <div class="step-content">
+            <p class="step-title">Drink a glass of water, slowly.</p>
+            <p class="step-desc">Buys your prefrontal cortex 2 minutes of recovery time.</p>
+            <div class="mt-sm">
+              <button class="btn btn-sm" onclick="completeStep(3)">Done</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 4 — shows the user's saved goal -->
+        <div class="step-row">
+          <div class="step-num" id="step-num-4">4</div>
+          <div class="step-content">
+            <p class="step-title">Read your goal out loud.</p>
+            <p class="step-desc">Speaking uses a different brain pathway than silent reading.</p>
+            <p class="step-goal-text" id="brake-goal">"..."</p>
+            <div class="mt-sm">
+              <button class="btn btn-sm" onclick="completeStep(4)">Done</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 5 — shows the user's next step -->
+        <div class="step-row">
+          <div class="step-num" id="step-num-5">5</div>
+          <div class="step-content">
+            <p class="step-title">Do only your next tiny step.</p>
+            <p class="step-desc">Not the whole task. Just the entry point.</p>
+            <p class="step-goal-text" id="brake-nextstep">—</p>
+            <div class="mt-sm">
+              <button class="btn btn-sm btn-calm" onclick="completeStep(5)">I started it</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Hidden until all 5 steps are done -->
+      <div class="completion-card" id="brake-complete">
+        <p class="completion-title">You broke the cycle.</p>
+        <p class="completion-sub">That took real effort. The hardest part is done.</p>
+      </div>
+
+      <button class="btn btn-ghost" onclick="resetBrake(); goTo('home');">Back</button>
+
+    </div>
+
+  </div><!-- end .app -->
+
+  <!-- Toast notification -->
+  <div class="toast" id="toast">Goals saved</div>
+
+
+  <!--
+    ============================================================
+    JAVASCRIPT
+    This section controls all the behaviour — what happens
+    when buttons are clicked, how data is saved, timers, etc.
+
+    If you haven't studied JS yet, focus on reading the comments.
+    The concepts here are: variables, functions, DOM manipulation,
+    localStorage, and setInterval (for the timer).
+    ============================================================
+  -->
+  <script>
+
+    // ── Storage ──────────────────────────────────────────────
+    //
+    // localStorage is a simple key-value store built into every browser.
+    // It saves data permanently — it survives closing the tab or browser.
+    //
+    // We store all app data under a single key: 'procguard'
+    // The value is a JSON string (JSON is just a text format for data).
+    //
+    // Think of it like saving a note:
+    //   localStorage.setItem('procguard', '{ "goal": "my goal..." }')
+    //   localStorage.getItem('procguard')  →  '{ "goal": "my goal..." }'
+
+    // Default data — used when the app first runs (nothing saved yet)
+    var defaultData = {
+      goal:     '',
+      traps:    '',
+      nextStep: ''
+    };
+
+    // getData() — reads saved data from localStorage
+    // If nothing is saved yet, returns the defaults above
+    function getData() {
+      var raw = localStorage.getItem('procguard');
+      if (!raw) return defaultData;
+
+      // JSON.parse converts the saved text back into a JS object
+      try {
+        return JSON.parse(raw);
+      } catch (e) {
+        // If the saved data is somehow broken, start fresh
+        return defaultData;
+      }
+    }
+
+    // saveData() — writes data to localStorage
+    // JSON.stringify converts a JS object into text for storage
+    function saveData(data) {
+      localStorage.setItem('procguard', JSON.stringify(data));
+    }
+
+
+    // ── Navigation ───────────────────────────────────────────
+    //
+    // goTo(screenName) hides all screens and shows the one requested.
+    // It also loads the right data into that screen before showing it.
+
+    function goTo(screenName) {
+
+      // Hide every screen by removing the 'active' class
+      var screens = document.querySelectorAll('.screen');
+      screens.forEach(function(s) { s.classList.remove('active'); });
+
+      // Update the nav buttons — mark the right tab as active
+      var navBtns = document.querySelectorAll('.nav-btn');
+      navBtns.forEach(function(btn) { btn.classList.remove('active'); });
+
+      // Show the requested screen
+      var target = document.getElementById('screen-' + screenName);
+      if (target) target.classList.add('active');
+
+      // Mark the correct nav button as active
+      // (nav buttons call goTo('home') or goTo('setup'))
+      var allNavBtns = document.querySelectorAll('.nav-btn');
+      allNavBtns.forEach(function(btn) {
+        // btn.getAttribute('onclick') returns something like "goTo('home')"
+        if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes("'" + screenName + "'")) {
+          btn.classList.add('active');
+        }
+      });
+
+      // Load the correct data for each screen
+      if (screenName === 'home')  loadHomeData();
+      if (screenName === 'setup') loadSetupData();
+      if (screenName === 'urge')  { loadUrgeData(); resetBreathing(); }
+      if (screenName === 'brake') loadBrakeData();
+
+      // Scroll back to top when changing screens
+      window.scrollTo(0, 0);
+    }
+
+
+    // ── Home screen data ─────────────────────────────────────
+
+    function loadHomeData() {
+      var data = getData();
+      var goalEl = document.getElementById('home-goal');
+
+      if (data.goal) {
+        goalEl.textContent = '\u201c' + data.goal + '\u201d';
+        // \u201c and \u201d are the Unicode codes for " and "
+      } else {
+        goalEl.textContent = '\u201cAdd your goals in My Goals to see your anchor here.\u201d';
+      }
+    }
+
+
+    // ── Setup screen ─────────────────────────────────────────
+
+    // Pre-fill the text areas with whatever was previously saved
+    function loadSetupData() {
+      var data = getData();
+      document.getElementById('input-goal').value     = data.goal     || '';
+      document.getElementById('input-traps').value    = data.traps    || '';
+      document.getElementById('input-nextstep').value = data.nextStep || '';
+    }
+
+    // Called when user taps "Save everything"
+    function saveGoals() {
+      var data = {
+        goal:     document.getElementById('input-goal').value.trim(),
+        traps:    document.getElementById('input-traps').value.trim(),
+        nextStep: document.getElementById('input-nextstep').value.trim()
+      };
+
+      saveData(data);
+      showToast('Goals saved');
+      goTo('home');
+    }
+
+
+    // ── Urge Interceptor screen data ─────────────────────────
+
+    function loadUrgeData() {
+      var data = getData();
+
+      document.getElementById('urge-goal').textContent =
+        '\u201c' + (data.goal || 'No goal set yet. Go to My Goals to add one.') + '\u201d';
+
+      document.getElementById('urge-traps').textContent =
+        data.traps || 'No traps listed yet. Go to My Goals to add them.';
+
+      document.getElementById('urge-nextstep').textContent =
+        data.nextStep || 'No next step defined yet. Go to My Goals to add one.';
+    }
+
+
+    // ── Breathing timer ───────────────────────────────────────
+    //
+    // Box breathing: inhale 4s → hold 2s → exhale 4s → hold 2s
+    // Total session: 30 seconds
+    //
+    // setInterval(fn, 1000) calls fn every 1000 milliseconds (1 second).
+    // clearInterval() stops it.
+
+    var breathInterval = null;  // stores the interval so we can stop it later
+
+    // Phase definitions: [label, duration in seconds, circle should be expanded?]
+    var breathPhases = [
+      ['Breathe in', 4, true ],
+      ['Hold',       2, true ],
+      ['Breathe out',4, false],
+      ['Hold',       2, false]
+    ];
+
+    function startBreathing() {
+      var totalSeconds  = 30;
+      var secondsLeft   = totalSeconds;
+      var phaseIndex    = 0;
+      var phaseSecondsLeft = breathPhases[0][1]; // start with first phase duration
+
+      var circle   = document.getElementById('breath-circle');
+      var timerNum = document.getElementById('timer-number');
+      var timerPh  = document.getElementById('timer-phase');
+      var progress = document.getElementById('breath-progress');
+      var btn      = document.getElementById('breath-btn');
+
+      // Set initial state
+      circle.textContent = breathPhases[0][0];
+      circle.classList.add('expand');
+      timerPh.textContent = 'Breathing...';
+      btn.textContent = 'Running...';
+      btn.disabled = true;
+
+      // clearInterval first in case startBreathing is called again
+      clearInterval(breathInterval);
+
+      // Run every second
+      breathInterval = setInterval(function() {
+        secondsLeft--;
+        phaseSecondsLeft--;
+
+        // Update the countdown display
+        var mins = Math.floor(secondsLeft / 60);
+        var secs = secondsLeft % 60;
+        timerNum.textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
+
+        // Update progress bar (goes from 100% to 0%)
+        progress.style.width = Math.round((secondsLeft / totalSeconds) * 100) + '%';
+
+        // Move to next breath phase if current one is done
+        if (phaseSecondsLeft <= 0) {
+          phaseIndex = (phaseIndex + 1) % breathPhases.length;
+          phaseSecondsLeft = breathPhases[phaseIndex][1];
+
+          var phase = breathPhases[phaseIndex];
+          circle.textContent = phase[0];
+
+          // Toggle the expand class — CSS transition handles the animation
+          if (phase[2]) {
+            circle.classList.add('expand');
+          } else {
+            circle.classList.remove('expand');
+          }
+        }
+
+        // Session complete
+        if (secondsLeft <= 0) {
+          clearInterval(breathInterval);
+          circle.textContent = 'Done';
+          circle.classList.remove('expand');
+          timerNum.textContent = '0:00';
+          timerPh.textContent  = 'Done. Now read your anchor below.';
+          btn.textContent      = 'Restart';
+          btn.disabled         = false;
+          btn.onclick          = resetBreathing;
+        }
+
+      }, 1000);
+    }
+
+    // Reset the breathing exercise back to its initial state
+    function resetBreathing() {
+      clearInterval(breathInterval);
+
+      var circle   = document.getElementById('breath-circle');
+      var timerNum = document.getElementById('timer-number');
+      var timerPh  = document.getElementById('timer-phase');
+      var progress = document.getElementById('breath-progress');
+      var btn      = document.getElementById('breath-btn');
+
+      circle.textContent = 'Breathe in';
+      circle.classList.remove('expand');
+      timerNum.textContent = '0:30';
+      timerPh.textContent  = 'Press start to begin';
+      progress.style.width = '100%';
+      btn.textContent      = 'Start';
+      btn.disabled         = false;
+      btn.onclick          = startBreathing;
+    }
+
+
+    // ── Emergency Brake screen ───────────────────────────────
+
+    var stepsCompleted = 0;  // counts how many steps are done
+
+    function loadBrakeData() {
+      var data = getData();
+
+      document.getElementById('brake-goal').textContent =
+        '\u201c' + (data.goal || 'No goal set yet. Go to My Goals to add one.') + '\u201d';
+
+      document.getElementById('brake-nextstep').textContent =
+        data.nextStep || 'No next step defined yet. Go to My Goals to add one.';
+    }
+
+    // Called when user taps "Done" on a step
+    function completeStep(stepNumber) {
+      var numEl = document.getElementById('step-num-' + stepNumber);
+
+      // If already done, do nothing
+      if (numEl.classList.contains('done')) return;
+
+      // Mark the circle as done (turns green via CSS)
+      numEl.classList.add('done');
+      numEl.textContent = '✓';
+
+      stepsCompleted++;
+
+      // If all 5 steps are done, show the completion card
+      if (stepsCompleted >= 5) {
+        document.getElementById('brake-steps').style.display = 'none';
+        document.getElementById('brake-complete').classList.add('visible');
+      }
+    }
+
+    // Reset the brake screen — called when navigating back
+    function resetBrake() {
+      stepsCompleted = 0;
+
+      for (var i = 1; i <= 5; i++) {
+        var numEl = document.getElementById('step-num-' + i);
+        numEl.classList.remove('done');
+        numEl.textContent = i;
+      }
+
+      document.getElementById('brake-steps').style.display = 'block';
+      document.getElementById('brake-complete').classList.remove('visible');
+    }
+
+
+    // ── Toast notification ───────────────────────────────────
+    //
+    // A small message that pops up briefly after saving.
+    // setTimeout(fn, ms) calls fn once after ms milliseconds.
+
+    function showToast(message) {
+      var toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+
+      // Hide it again after 2 seconds
+      setTimeout(function() {
+        toast.classList.remove('show');
+      }, 2000);
+    }
+
+
+    // ── Init ─────────────────────────────────────────────────
+    // This runs once when the page first loads.
+    // Load the home screen data right away.
+
+    loadHomeData();
+
+  </script>
+
+</body>
+</html>
